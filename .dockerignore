@@ -1,0 +1,38 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pkl
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Editor & system files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+.idea/
+.vscode/
+*.log
+
+# Django-generated files
+static/
+media/
+*.sqlite3
+db.sqlite3
+
+# Environment files
+.env
+.env.*
+local.env
+
+# Frontend (if using React/Vite/etc.)
+node_modules/
+dist/
+build/

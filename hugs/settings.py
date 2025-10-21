@@ -1,168 +1,126 @@
-
 import os
 from pathlib import Path
-from datetime import timedelta
-
-
 from dotenv import load_dotenv
-from environ import Env
+import dj_database_url
 
-env = Env()
-env.read_env()
+# Load environment variables from .env (only in development)
 load_dotenv()
 
-
-
+# --- Base Directory ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
-DEBUG = os.getenv("DEBUG", "True") == "True"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
-
-INSTALLED_APPS = [
-    'channels',
-    'daphne',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.sites',
-
-    'api',
-    'chat',
-    'student',
-    'userauth',
-
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
-
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.github',
+# --- Security ---
+SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-default-secret-key")
+DEBUG = os.getenv("DEBUG", "False").lower() in ["true", "1", "yes"]
+ALLOWED_HOSTS = [
+    os.getenv("RAILWAY_PUBLIC_DOMAIN", "localhost"),
+    "127.0.0.1",
+    "localhost"
 ]
 
-SITE_ID = 2
+# --- Application Definition ---
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "channels",  # Django Channels for WebSockets
+    # Add your apps here
+]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-]
-
-CORS_ALLOW_CREDENTIALS = True
-
-# Use secure settings only in production
-CSRF_COOKIE_SAMESITE = None
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-}
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
-
-ROOT_URLCONF = 'hugs.urls'
+ROOT_URLCONF = "hugs.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'hugs.wsgi.application'
-ASGI_APPLICATION = 'hugs.asgi.application'
+WSGI_APPLICATION = "hugs.wsgi.application"
+ASGI_APPLICATION = "hugs.asgi.application"  # For Django Channels
+
+# --- Database Configuration ---
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+DATABASES = {
+    "default": dj_database_url.parse(DATABASE_URL)
+}
+
+# --- Redis / Channels Configuration ---
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
-}
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-STATIC_URL = 'static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# OAuth Settings
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP': {
-           'client_id': env('OAUTH_GOOGLE_CLIENT_ID'),
-           'secret': env('OAUTH_GOOGLE_SECRET'),
-        },
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-            'prompt': 'consent',
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
         },
     },
 }
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-)
 
-SITE_ID = 1  # or 2, depending on your admin setup
+# --- Password Validation ---
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
 
-LOGIN_REDIRECT_URL = '/'  # or your frontend path
-ACCOUNT_EMAIL_VERIFICATION = "none"
-SOCIALACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_REQUIRED = True
+# --- Internationalization ---
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
 
-ACCOUNT_UNIQUE_EMAIL = True
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_LOGIN_ON_GET = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# --- Static Files ---
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-EMAIL_HOST = 'smtp.gmail.com'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# --- Default Auto Field ---
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Email Configuration (Gmail) ---
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'karanibriantimothy@gmail.com'           # Replace with your Gmail address
-EMAIL_HOST_PASSWORD = 'your_app_password'          # Use Gmail App Password
 EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# --- Google OAuth (optional, add your app logic) ---
+OAUTH_GOOGLE_CLIENT_ID = os.getenv("OAUTH_GOOGLE_CLIENT_ID")
+OAUTH_GOOGLE_SECRET = os.getenv("OAUTH_GOOGLE_SECRET")
 
