@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lobby Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #messages div { margin-bottom: 10px; }
+        input[type="text"] { width: 300px; padding: 8px; }
+        button { padding: 8px 12px; }
+        #status { font-weight: bold; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <h1>Let's Chat!</h1>
+
+    <div id="status">Connecting...</div>
+
+    <form id="form">
+        <input type="text" name="message" placeholder="Type your message..." required autocomplete="off" />
+        <button type="submit" disabled>Send</button>
+    </form>
+
+    <div id="messages"></div>
+
+    <script type="text/javascript">
+        const url = `ws://${window.location.host}/ws/socket-server/`;
+        const chatSocket = new WebSocket(url);
+
+        const messagesDiv = document.getElementById('messages');
+        const form = document.getElementById('form');
+        const messageInput = form.querySelector('input[name="message"]');
+        const sendButton = form.querySelector('button');
+        const statusDiv = document.getElementById('status');
+
+        chatSocket.onopen = function () {
+            console.log('✅ WebSocket connection opened');
+            statusDiv.textContent = 'Connected';
+            sendButton.disabled = false;
+        };
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            console.log('📩 Message received:', data);
+
+            if (data.type === 'chat') {
+                const messageEl = document.createElement('div');
+                messageEl.innerHTML = `<p>${data.message}</p>`;
+                messagesDiv.appendChild(messageEl);
+            }
+        };
+
+        chatSocket.onerror = function (e) {
+            console.error('❌ WebSocket error:', e);
+            statusDiv.textContent = 'Error occurred. See console.';
+        };
+
+        chatSocket.onclose = function (e) {
+            console.warn('⚠️ WebSocket closed:', e);
+            statusDiv.textContent = 'Disconnected';
+            sendButton.disabled = true;
+        };
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            if (chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    message: messageInput.value
+                }));
+                messageInput.value = '';
+            } else {
+                alert("⚠️ WebSocket is not connected. Please wait...");
+            }
+        });
+    </script>
+
+</body>
+</html>

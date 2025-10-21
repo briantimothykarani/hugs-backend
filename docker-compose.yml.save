@@ -1,0 +1,76 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+lsexit
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: hugs_postgres_db
+    # Read environment variables from the local.env file
+    env_file:
+      - ./local.env
+    volumes:
+      # Persist the database data outside the container
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      # FIX: Changed host port from 5432 to 5433 to avoid "address already in use" error
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis Service for Django Channels/Caching
+  redis:
+    image: redis:7-alpine
+    container_name: hugs_redis
+    ports:
+      - "6379:6379"
+
+  # Django Application Service (Web)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hugs_web
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             daphne -b 0.0.0.0 -p 8000 hugs.asgi:application"
+    env_file:
+      - ./local.env
+    volumes:
+      # Map the current project directory into the container
+      - .:/usr/src/app/
+      # Volume for media files persistence
+      - media_volume:/usr/src/app/media/
+    ports:
+      # Map the application port to your host machine
+      - "8000:8000"
+    depends_on:
+      # Ensure db and redis are healthy/running before starting the web app
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+# Volumes for data persistence
+volumes:
+  postgres_data:
+  media_volume:
+
+

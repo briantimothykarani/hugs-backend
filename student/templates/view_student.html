@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Student List</h2>
+    <a href="{% url 'student:add_student' %}" class="btn btn-primary mb-3">Add Student</a>
+    {% if students %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Institution</th>
+                    <th>Year of Study</th>
+                    <th>About</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student.username }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.age }}</td>
+                    <td>{{ student.get_gender_display }}</td>
+                    <td>{{ student.institution }}</td>
+                    <td>{{ student.current_year_of_study }}</td>
+                    <td>{{ student.about_student|truncatewords:10 }}</td>
+                    <td>
+                        <a href="{% url 'student:update_student' student.id %}" class="btn btn-sm btn-info">Edit</a>
+                        <a href="{% url 'student:delete_student' student.id %}" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No students found.</p>
+    {% endif %}
+</div>
+{% endblock %}

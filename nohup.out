@@ -1,0 +1,6 @@
+2025-06-08 04:45:33,952 INFO     Starting server at tcp:port=8000:interface=127.0.0.1
+2025-06-08 04:45:33,953 INFO     HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+2025-06-08 04:45:33,954 INFO     Configuring endpoint tcp:port=8000:interface=127.0.0.1
+2025-06-08 04:45:33,956 INFO     Listening on TCP address 127.0.0.1:8000
+Session data corrupted
+2025-06-08 04:46:02,486 WARNING  Session data corrupted
