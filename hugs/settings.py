@@ -25,13 +25,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "channels",  # Django Channels for WebSockets
-    # Add your apps here
-    "chat",  # Example WebSocket app
+    "corsheaders",  # For CORS handling
+    "chat",  # Your chat app or other apps
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ For static file serving
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Static files serving
+    "corsheaders.middleware.CorsMiddleware",       # CORS middleware, near the top
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -58,7 +59,7 @@ TEMPLATES = [
     },
 ]
 
-# WSGI for fallback/management commands
+# WSGI for fallback / management commands
 WSGI_APPLICATION = "hugs.wsgi.application"
 
 # ASGI for Channels
@@ -118,4 +119,12 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 # --- Google OAuth (if used) ---
 OAUTH_GOOGLE_CLIENT_ID = os.getenv("OAUTH_GOOGLE_CLIENT_ID")
 OAUTH_GOOGLE_SECRET = os.getenv("OAUTH_GOOGLE_SECRET")
+
+# --- CORS configuration for React frontend ---
+CORS_ALLOWED_ORIGINS = [
+    "https://briantimothykarani.github.io",
+]
+
+# Allow cookies/auth if needed
+CORS_ALLOW_CREDENTIALS = True
 
