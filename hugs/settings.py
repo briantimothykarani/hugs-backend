@@ -3,7 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
-# Load environment variables from .env (only in development)
+# Load environment variables (only useful locally)
 load_dotenv()
 
 # --- Base Directory ---
@@ -12,11 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --- Security ---
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-default-secret-key")
 DEBUG = os.getenv("DEBUG", "False").lower() in ["true", "1", "yes"]
-ALLOWED_HOSTS = [
-    os.getenv("RAILWAY_PUBLIC_DOMAIN", "localhost"),
-    "127.0.0.1",
-    "localhost"
-]
+
+# Support comma-separated allowed hosts from env
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
 
 # --- Application Definition ---
 INSTALLED_APPS = [
@@ -28,10 +26,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "channels",  # Django Channels for WebSockets
     # Add your apps here
+    "chat",  # Example WebSocket app
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ For static file serving
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -58,17 +58,18 @@ TEMPLATES = [
     },
 ]
 
+# WSGI for fallback/management commands
 WSGI_APPLICATION = "hugs.wsgi.application"
-ASGI_APPLICATION = "hugs.asgi.application"  # For Django Channels
+
+# ASGI for Channels
+ASGI_APPLICATION = "hugs.asgi.application"
 
 # --- Database Configuration ---
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 DATABASES = {
-    "default": dj_database_url.parse(DATABASE_URL)
+    "default": dj_database_url.parse(os.getenv("DATABASE_URL"))
 }
 
-# --- Redis / Channels Configuration ---
+# --- Channels / Redis ---
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 CHANNEL_LAYERS = {
@@ -82,18 +83,10 @@ CHANNEL_LAYERS = {
 
 # --- Password Validation ---
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 # --- Internationalization ---
@@ -102,17 +95,19 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# --- Static Files ---
+# --- Static Files (via WhiteNoise) ---
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+# --- Media Files ---
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # --- Default Auto Field ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# --- Email Configuration (Gmail) ---
+# --- Email (Gmail SMTP) ---
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
@@ -120,7 +115,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
-# --- Google OAuth (optional, add your app logic) ---
+# --- Google OAuth (if used) ---
 OAUTH_GOOGLE_CLIENT_ID = os.getenv("OAUTH_GOOGLE_CLIENT_ID")
 OAUTH_GOOGLE_SECRET = os.getenv("OAUTH_GOOGLE_SECRET")
 
